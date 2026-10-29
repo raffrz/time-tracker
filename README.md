@@ -2,6 +2,18 @@
 
 ![Tela Hoje do time-tracker](docs/screenshot.png)
 
+Controle do tempo gasto em cada tarefa do trabalho. Registra o dia como uma
+sequencia de eventos em um banco **SQLite** local e calcula as horas por tarefa,
+descontando pausas e tempo de tarefas paralelas (side-tasks).
+
+Da pra usar de tres formas, todas sobre o mesmo core e o mesmo banco:
+
+- **CLI**: comandos no terminal (`python cli.py --start-day TASK-123`).
+- **Web**: front React com tela "Hoje" em tempo real e "Historico", falando com a API HTTP.
+- **Docker**: API e front em containers (ver [Docker](#docker)).
+
+## Pacotes
+
 Monorepo com quatro pacotes:
 
 | Pacote | O que e |
@@ -9,28 +21,31 @@ Monorepo com quatro pacotes:
 | `packages/time-tracker-core` | Regras de negocio, calculo de horas e persistencia (SQLite). Sem argv, sem env, sem texto formatado. |
 | `packages/time-tracker-cli`  | Interface de linha de comando: parsing de argumentos/horarios, formatacao e config. Depende do core. |
 | `packages/time-tracker-api`  | API HTTP (FastAPI): contratos JSON e mapeamento de erros. Depende do core. |
-| `packages/time-tracker-front`| Front React (Vite, tema escuro): tela "Hoje" (comandos, tempo real) e "Histórico". Consome a API. |
-
-Utilitario de linha de comando para controlar o tempo gasto em cada tarefa do
-trabalho. Registra o dia como uma sequencia de eventos em um banco **SQLite**
-local e calcula as horas por tarefa, descontando pausas e tempo de tarefas
-paralelas (side-tasks).
+| `packages/time-tracker-front`| Front React (Vite, tema escuro): tela "Hoje" (comandos, tempo real) e "Historico". Consome a API. |
 
 ## Requisitos
 
-- Python 3.9+ (usa apenas a biblioteca padrao — `sqlite3`).
-- Nenhuma dependencia externa obrigatoria, nenhum servidor de banco.
+| Para usar | Precisa de |
+|-----------|------------|
+| CLI (e o core) | Python 3.9+. Apenas biblioteca padrao (`sqlite3`), sem servidor de banco. |
+| API | Python 3.9+ com `fastapi` e `uvicorn` (instalados junto com o pacote da API). |
+| Front (dev) | Node.js 20+ e npm, mais a API rodando. |
+| Docker | Docker com Compose v2 (as imagens ja trazem Python 3.12 e Node 20). |
 
 ## Instalacao
 
-Nao precisa instalar nada: `python cli.py ...` na raiz roda direto do codigo-fonte
-(da pra apontar um alias do shell para ele, ex.: `alias tt='python /caminho/time-tracker/cli.py'`).
-Para instalar de verdade
+A CLI nao precisa de instalacao: `python cli.py ...` na raiz roda direto do
+codigo-fonte (da pra apontar um alias do shell para ele, ex.:
+`alias tt='python /caminho/time-tracker/cli.py'`). Para instalar de verdade
 (comando `time-tracker` no PATH do venv):
 
 ```bash
 pip install -e packages/time-tracker-core -e packages/time-tracker-cli
 ```
+
+Para a API, acrescente o pacote dela (`pip install -e packages/time-tracker-api`);
+para o front, `npm install` em `packages/time-tracker-front` (ver
+[Front](#front-react)).
 
 Opcionalmente, um venv:
 
@@ -45,15 +60,17 @@ python -m venv .venv
 
 ## Configuracao
 
-Por padrao (via `python cli.py`) os dados ficam em `time_tracker.db` na raiz do
-repo; ao usar o comando instalado `time-tracker`, o padrao e `~/.time_tracker.db`.
-Para usar
-outro caminho, defina a variavel de ambiente `TIMETRACKER_DB` (ou um `.env`,
-se tiver `python-dotenv` instalado):
+Todas as interfaces gravam no mesmo SQLite. O caminho vem da variavel de ambiente
+`TIMETRACKER_DB` (na CLI tambem de um `.env`, se tiver `python-dotenv` instalado;
+veja `.env.example`). Sem ela:
 
-| Variavel        | Default                        |
-|-----------------|--------------------------------|
-| TIMETRACKER_DB  | `time_tracker.db` (raiz do repo) via `cli.py`; `~/.time_tracker.db` se instalado |
+| Como roda | Banco padrao |
+|-----------|--------------|
+| `python cli.py` e `python api.py` | `time_tracker.db` na raiz do repo |
+| comandos instalados (`time-tracker`, `time-tracker-api`) | `~/.time_tracker.db` |
+| Docker (imagem da API) | `/data/time_tracker.db` |
+
+A API tambem aceita `TIMETRACKER_API_HOST` (127.0.0.1) e `TIMETRACKER_API_PORT` (8000).
 
 ```bash
 # Windows (PowerShell)
@@ -62,7 +79,7 @@ $env:TIMETRACKER_DB = "$HOME\time_tracker.db"
 export TIMETRACKER_DB="$HOME/.time_tracker.db"
 ```
 
-## Uso
+## Uso da CLI
 
 O schema e criado automaticamente na primeira execucao. Para forcar:
 
@@ -283,8 +300,13 @@ ou um volume nomeado em `/data`.
 ## Testes
 
 ```bash
+pip install pytest httpx   # httpx e exigido pelo TestClient da API
 python -m pytest
 ```
+
+O `pytest.ini` aponta para o codigo-fonte dos pacotes, entao nao precisa instalar
+nada alem de `fastapi`, `uvicorn`, `pytest` e `httpx`. Os testes usam um SQLite
+temporario e relogio fixo.
 
 ## Licenca
 
