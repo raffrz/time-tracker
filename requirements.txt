@@ -1,0 +1,7 @@
+# Os pacotes do monorepo usam apenas a biblioteca padrao do Python (sqlite3).
+# Nenhuma dependencia externa e obrigatoria.
+#
+# Desenvolvimento: pytest (python -m pytest na raiz).
+# Opcional: python-dotenv permite carregar variaveis de um arquivo .env.
+# pytest
+# python-dotenv

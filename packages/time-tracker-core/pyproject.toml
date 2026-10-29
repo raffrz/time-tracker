@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "time-tracker-core"
+version = "0.1.0"
+description = "Regras de negocio do time-tracker (controle de tempo por tarefa), independente de interface."
+requires-python = ">=3.9"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+time_tracker_core = ["schema.sql"]

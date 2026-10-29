@@ -1,0 +1,27 @@
+# Ambiente / segredos
+.env
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+build/
+
+# Dados locais
+*.db
+*.sqlite
+*.sqlite3
+backups/
+
+# Front
+node_modules/
+dist/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
