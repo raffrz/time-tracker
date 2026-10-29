@@ -2,7 +2,7 @@
 
 ![Tela Hoje do time-tracker](docs/screenshot.png)
 
-Monorepo com dois pacotes:
+Monorepo com quatro pacotes:
 
 | Pacote | O que e |
 |--------|---------|
@@ -24,7 +24,8 @@ paralelas (side-tasks).
 ## Instalacao
 
 Nao precisa instalar nada: `python cli.py ...` na raiz roda direto do codigo-fonte
-(e e o que o alias `timetracker`/`tt` do bashrc usa). Para instalar de verdade
+(da pra apontar um alias do shell para ele, ex.: `alias tt='python /caminho/time-tracker/cli.py'`).
+Para instalar de verdade
 (comando `time-tracker` no PATH do venv):
 
 ```bash
@@ -147,6 +148,7 @@ time-tracker/
   cli.py                        # shim de compatibilidade (bashrc) -> time_tracker_cli
   api.py                        # sobe a API direto do codigo-fonte
   pytest.ini
+  docker/                       # api.Dockerfile, front.Dockerfile, nginx.conf
   packages/
     time-tracker-core/src/time_tracker_core/
       models.py                 # Event, DayState, DayReport, PauseResult (dados)
@@ -189,7 +191,7 @@ e passe a `TimeTracker(repo)`.
 ## API HTTP
 
 ```bash
-pip install fastapi uvicorn   # ja instalados neste ambiente
+pip install -e packages/time-tracker-core -e packages/time-tracker-api   # traz fastapi e uvicorn
 python api.py                 # http://127.0.0.1:8000 (docs em /docs)
 ```
 
@@ -235,6 +237,48 @@ O Vite repassa `/api/*` para a API (sem CORS). Outra URL da API:
 - **Historico** (menu lateral): eventos agrupados por dia, filtro por periodo e exclusao
   de registros (o tempo do dia e recalculado; excluir um `START_DAY` ou `RESUME` pode
   deixar o dia inconsistente).
+
+## Docker
+
+Em `docker/` ha um Dockerfile para a API e outro para o front. Ambos usam a raiz
+do repo como contexto de build.
+
+| Imagem | O que faz |
+|--------|-----------|
+| `docker/api.Dockerfile`   | Python 3.12 + core + API (FastAPI). Escuta na 8000 e grava o SQLite em `/data/time_tracker.db` (`TIMETRACKER_DB`). Fuso padrao `America/Sao_Paulo` (`TZ`), que define a virada do dia. |
+| `docker/front.Dockerfile` | Build do React/Vite e nginx servindo o resultado; `docker/nginx.conf` repassa `/api/` para o servico `time-tracker-api:8000`. |
+
+Exemplo de `docker-compose.yml` (ajuste o `context` para o caminho do repo):
+
+```yaml
+services:
+  time-tracker-api:
+    build:
+      context: ./time-tracker
+      dockerfile: docker/api.Dockerfile
+    environment:
+      TZ: America/Sao_Paulo
+    volumes:
+      - ./time-tracker:/data      # pasta, nao o arquivo (o SQLite precisa dos arquivos de journal)
+
+  time-tracker-front:
+    build:
+      context: ./time-tracker
+      dockerfile: docker/front.Dockerfile
+    ports:
+      - "3012:80"
+    depends_on:
+      - time-tracker-api
+```
+
+O nome do servico da API precisa ser `time-tracker-api`, pois o nginx o referencia.
+Sem autenticacao: so o front e publicado; mantenha em localhost.
+
+**Compartilhar o banco com a CLI:** ao montar a pasta do repo em `/data`, o
+container usa o mesmo `time_tracker.db` da CLI (`python cli.py`), entao terminal e
+web enxergam os mesmos dados. Evite gravar pela CLI e pela web ao mesmo tempo
+(SQLite com escritas simultaneas). Se preferir bancos separados, monte outra pasta
+ou um volume nomeado em `/data`.
 
 ## Testes
 
