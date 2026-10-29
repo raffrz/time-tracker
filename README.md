@@ -1,5 +1,7 @@
 # time-tracker
 
+![Tela Hoje do time-tracker](docs/screenshot.png)
+
 Monorepo com dois pacotes:
 
 | Pacote | O que e |
