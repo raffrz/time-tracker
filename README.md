@@ -145,7 +145,7 @@ trabalhadas.
 
 ```
 time-tracker/
-  cli.py                        # shim de compatibilidade (bashrc) -> time_tracker_cli
+  cli.py                        # atalho para rodar a CLI direto do codigo-fonte
   api.py                        # sobe a API direto do codigo-fonte
   pytest.ini
   docker/                       # api.Dockerfile, front.Dockerfile, nginx.conf
